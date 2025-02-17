@@ -1,0 +1,32 @@
+services:
+  mongo:
+    image: mongo:latest
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - ${PWD}/XSTORAGE/db:/data/db
+    networks:
+      - ddld-net
+  api-sme-kadeda:
+    build: ./api
+    restart: unless-stopped
+    depends_on:
+      - mongo # Ensure MongoDB starts before this service
+    volumes:
+      - ${PWD}/XSTORAGE/uploads:/app/src/uploads
+      - ${PWD}/XSTORAGE/db:/app/src/db
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.sme-kadeda-route.rule=Host(`kadeda-sme.prismaforge.ng`)
+    #   - traefik.http.routers.sme-kadeda-route.tls=true
+    #   - traefik.http.routers.sme-kadeda-route.tls.certresolver=myresolver
+    #   - traefik.http.routers.sme-kadeda-route.middlewares=https-redirect@docker
+    #   - traefik.http.services.api-sme-kadeda.loadbalancer.server.port=3000
+    ports:
+      - "3000:3000" # Make sure your app listens on this port
+    networks:
+      - ddld-net
+networks:
+  ddld-net:
+    external: true

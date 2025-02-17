@@ -1,0 +1,212 @@
+const express = require("express");
+const { Router } = express;
+const opsGrantController = require("../controller/opsgrant.controller");
+const kadunaWards = require("../model/kadunawards");
+
+module.exports = () => {
+  const api = new Router();
+
+  // Get all LGAs
+  api.get("/lgas", (req, res) => {
+    res.json({ ok: true, lgas: Object.keys(kadunaWards) });
+  });
+
+  // Get all Wards for a given LGA
+  api.get("/lgas/:lga/wards", (req, res) => {
+    let { lga } = req.params;
+
+    // Normalize input: Convert to lowercase and trim spaces
+    lga = lga.trim().toLowerCase();
+
+    // Find the matching LGA name from the keys of the kadunaWards object
+    const matchedLGA = Object.keys(kadunaWards).find(
+      (key) => key.toLowerCase() === lga
+    );
+
+    if (!matchedLGA) {
+      return res.status(400).json({ ok: false, message: "Invalid LGA" });
+    }
+
+    res.json({ ok: true, wards: kadunaWards[matchedLGA] });
+  });
+
+  api.get("/", async (req, res) => {
+    try {
+      const query = req.query;
+      const {
+        ok,
+        grants,
+        currentPage,
+        totalPages,
+        limit,
+        totalGrants,
+        message,
+      } = await opsGrantController.getGrants(query);
+      if (ok) {
+        res.json({
+          ok,
+          grants,
+          currentPage,
+          totalPages,
+          limit,
+          totalGrants,
+          message,
+        });
+      } else {
+        res.status(500).json({ error: message });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  api.get("/summary", async (req, res) => {
+    try {
+      const result =
+        await opsGrantController.getOperationalGrantsDashboardSummary();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json([
+        {
+          businessLGA: [],
+          businessRegIssuer: [],
+          gender: [],
+          isCivilServant: [],
+          idDocType: [],
+          businessLGACode: [],
+          ok: false,
+        },
+      ]);
+    }
+  });
+
+  api.get("/status", async (req, res) => {
+    try {
+      const { currentPage, limit, search, status } = req.query; // Extract query parameters
+
+      const response = await opsGrantController.getGrantsByStatus({
+        currentPage: parseInt(currentPage) || 1,
+        limit: parseInt(limit) || 10,
+        search: search || "",
+        status: status || "",
+      });
+
+      response.ok
+        ? res.json(response)
+        : res.status(400).json({ error: response.message });
+    } catch (error) {
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get all grants' coordinates by LGA & Ward
+  api.get("/coordinates", async (req, res) => {
+    const { businessLGA, businessWard } = req.query;
+
+    const response = await opsGrantController.getCoordinatesByWard(
+      businessLGA,
+      businessWard
+    );
+
+    response.ok
+      ? res.json(response)
+      : res.status(404).json({ error: response.message });
+  });
+
+  // Get businesses for Yellow Pages with filters and pagination
+  api.get("/yellow-pages", async (req, res) => {
+    try {
+      const {
+        currentPage,
+        limit,
+        businessRegIssuer,
+        businessLGA,
+        businessWard,
+      } = req.query;
+
+      const response = await opsGrantController.getYellowPages({
+        currentPage: parseInt(currentPage) || 1,
+        limit: parseInt(limit) || 10,
+        businessRegIssuer: businessRegIssuer || "",
+        businessLGA: businessLGA || "",
+        businessWard: businessWard || "",
+      });
+
+      response.ok
+        ? res.json(response)
+        : res.status(400).json({ error: response.message });
+    } catch (error) {
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  //  Get a single grant by ID
+  api.get("/:id", async (req, res) => {
+    const response = await opsGrantController.getGrantById(req.params.id);
+    response.ok
+      ? res.json(response)
+      : res.status(404).json({ error: response.message });
+  });
+
+  //  Route to update status to "Eligible"
+  api.patch("/:id/eligible", async (req, res) => {
+    const { id } = req.params;
+    const response = await opsGrantController.updateGrantStatus(id, "Eligible");
+
+    response.ok
+      ? res.json(response)
+      : res.status(400).json({ error: response.message });
+  });
+
+  // Route to update status to "Disbursed"
+  api.patch("/:id/disbursed", async (req, res) => {
+    const { id } = req.params;
+    const response = await opsGrantController.updateGrantStatus(
+      id,
+      "Disbursed"
+    );
+
+    response.ok
+      ? res.json(response)
+      : res.status(400).json({ error: response.message });
+  });
+
+  // Route to update status to "Rejected"
+  api.patch("/:id/rejected", async (req, res) => {
+    const { id } = req.params;
+    const response = await opsGrantController.updateGrantStatus(id, "Rejected");
+
+    response.ok
+      ? res.json(response)
+      : res.status(400).json({ error: response.message });
+  });
+
+  //  Create a new grant
+  api.post("/", async (req, res) => {
+    const response = await opsGrantController.createGrant(req.body);
+    response.ok
+      ? res.status(201).json(response)
+      : res.status(400).json({ error: response.message });
+  });
+
+  //  Update a grant by ID
+  api.put("/:id", async (req, res) => {
+    const response = await opsGrantController.updateGrant(
+      req.params.id,
+      req.body
+    );
+    response.ok
+      ? res.json(response)
+      : res.status(400).json({ error: response.message });
+  });
+
+  //  Delete a grant by ID
+  api.delete("/:id", async (req, res) => {
+    const response = await opsGrantController.deleteGrant(req.params.id);
+    response.ok
+      ? res.json(response)
+      : res.status(400).json({ error: response.message });
+  });
+
+  return api;
+};
