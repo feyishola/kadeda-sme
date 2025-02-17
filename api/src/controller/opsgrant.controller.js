@@ -1,34 +1,73 @@
 const db = require("../database");
 const GrantModel = require("../model/opsgrants.model");
 class opsGrantController {
-  async getGrants({ currentPage = 1, limit = 10, search = "" }) {
-    try {
-      const searchQuery = search
-        ? {
-            $text: { $search: search },
-          }
-        : {};
+  // async getGrants({ currentPage = 1, limit = 10, search = "" }) {
+  //   try {
+  //     const searchQuery = search
+  //       ? {
+  //           $text: { $search: search },
+  //         }
+  //       : {};
 
+  //     const total = await GrantModel.countDocuments(searchQuery);
+
+  //     const grants = await GrantModel.find(searchQuery)
+  //       .skip((currentPage - 1) * limit)
+  //       .limit(limit);
+
+  //     const totalPages = Math.ceil(total / limit);
+
+  //     return {
+  //       ok: true,
+  //       grants,
+  //       currentPage: currentPage,
+  //       limit,
+  //       totalGrants: total,
+  //       totalPages,
+  //     };
+  //   } catch (error) {
+  //     return { ok: false, message: error.message };
+  //   }
+  // }
+  async getGrants({ currentPage = 1, limit = 10, search = "", status = "" }) {
+    try {
+      let searchQuery = {};
+
+      // Apply full-text search if provided
+      if (search) {
+        searchQuery.$text = { $search: search };
+      }
+
+      // Apply status filter if provided and valid
+      const validStatuses = ["Eligible", "Disbursed", "Rejected"];
+      if (status) {
+        if (!validStatuses.includes(status)) {
+          return { ok: true, grants: [], message: "Invalid status provided." };
+        }
+        searchQuery.status = status;
+      }
+
+      // Get total count for pagination
       const total = await GrantModel.countDocuments(searchQuery);
 
+      // Fetch paginated results
       const grants = await GrantModel.find(searchQuery)
         .skip((currentPage - 1) * limit)
         .limit(limit);
 
-      const totalPages = Math.ceil(total / limit);
-
       return {
         ok: true,
         grants,
-        currentPage: currentPage,
+        currentPage,
         limit,
         totalGrants: total,
-        totalPages,
+        totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
       return { ok: false, message: error.message };
     }
   }
+
   async getAllOpsGrant({ currentPage }) {
     try {
       const itemsPerPage = 10;
@@ -320,49 +359,49 @@ class opsGrantController {
   //     }
   //   }
 
-  async getGrantsByStatus({
-    currentPage = 1,
-    limit = 10,
-    search = "",
-    status = "",
-  }) {
-    try {
-      let searchQuery = {};
+  // async getGrantsByStatus({
+  //   currentPage = 1,
+  //   limit = 10,
+  //   search = "",
+  //   status = "",
+  // }) {
+  //   try {
+  //     let searchQuery = {};
 
-      // Apply full-text search if provided
-      if (search) {
-        searchQuery.$text = { $search: search };
-      }
+  //     // Apply full-text search if provided
+  //     if (search) {
+  //       searchQuery.$text = { $search: search };
+  //     }
 
-      // Validate and apply status filter
-      const validStatuses = ["Eligible", "Disbursed", "Rejected"];
-      if (status) {
-        if (!validStatuses.includes(status)) {
-          return { ok: true, grants: [], message: "Invalid status provided." };
-        }
-        searchQuery.status = status;
-      }
+  //     // Validate and apply status filter
+  //     const validStatuses = ["Eligible", "Disbursed", "Rejected"];
+  //     if (status) {
+  //       if (!validStatuses.includes(status)) {
+  //         return { ok: true, grants: [], message: "Invalid status provided." };
+  //       }
+  //       searchQuery.status = status;
+  //     }
 
-      // Get total count for pagination
-      const total = await GrantModel.countDocuments(searchQuery);
+  //     // Get total count for pagination
+  //     const total = await GrantModel.countDocuments(searchQuery);
 
-      // Fetch paginated results
-      const grants = await GrantModel.find(searchQuery)
-        .skip((currentPage - 1) * limit)
-        .limit(limit);
+  //     // Fetch paginated results
+  //     const grants = await GrantModel.find(searchQuery)
+  //       .skip((currentPage - 1) * limit)
+  //       .limit(limit);
 
-      return {
-        ok: true,
-        grants,
-        currentPage,
-        limit,
-        totalGrants: total,
-        totalPages: Math.ceil(total / limit),
-      };
-    } catch (error) {
-      return { ok: false, message: error.message };
-    }
-  }
+  //     return {
+  //       ok: true,
+  //       grants,
+  //       currentPage,
+  //       limit,
+  //       totalGrants: total,
+  //       totalPages: Math.ceil(total / limit),
+  //     };
+  //   } catch (error) {
+  //     return { ok: false, message: error.message };
+  //   }
+  // }
 
   // Get all grants' longitude & latitude for a given LGA and Ward
   async getCoordinatesByWard(businessLGA, businessWard) {

@@ -1,43 +1,45 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const sqlite3 = require("sqlite3").verbose();
+const path = require("path");
 
-const dbPath = path.join(__dirname, '/db/kaddep.db');
+// const dbPath = path.join(__dirname, '/db/kaddep.db');
+const dbPath = path.join("/tmp", "kaddep.db");
 
 // Add error handling and connection retries
 let retryCount = 0;
 const maxRetries = 3;
 
 function connectToDatabase() {
-    const db = new sqlite3.Database(dbPath, (err) => {
-        if (err) {
-            console.error('Error connecting to database:', err);
-            if (retryCount < maxRetries) {
-                retryCount++;
-                console.log(`Retrying connection (${retryCount}/${maxRetries})...`);
-                setTimeout(connectToDatabase, 1000 * retryCount);
-                return;
-            }
-            throw new Error('Failed to connect to database after multiple attempts');
-        }
+  const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error("Error connecting to database:", err);
+      if (retryCount < maxRetries) {
+        retryCount++;
+        console.log(`Retrying connection (${retryCount}/${maxRetries})...`);
+        setTimeout(connectToDatabase, 1000 * retryCount);
+        return;
+      }
+      throw new Error("Failed to connect to database after multiple attempts");
+    }
 
-        console.log('Connected to SQLite database');
-        
-        // Wrap table creation in a promise for better error handling
-        createTable(db)
-            .then(() => console.log('Table creation/verification successful'))
-            .catch(error => {
-                console.error('Error creating/verifying table:', error);
-                db.close();
-                process.exit(1);
-            });
-    });
+    console.log("Connected to SQLite database");
 
-    return db;
+    // Wrap table creation in a promise for better error handling
+    createTable(db)
+      .then(() => console.log("Table creation/verification successful"))
+      .catch((error) => {
+        console.error("Error creating/verifying table:", error);
+        db.close();
+        process.exit(1);
+      });
+  });
+
+  return db;
 }
 
 function createTable(db) {
-    return new Promise((resolve, reject) => {
-        db.run(`
+  return new Promise((resolve, reject) => {
+    db.run(
+      `
             CREATE TABLE IF NOT EXISTS opgrants (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 firstName TEXT NOT NULL,
@@ -88,25 +90,27 @@ function createTable(db) {
                 createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        `, (err) => {
-            if (err) reject(err);
-            else resolve();
-        });
-    });
+        `,
+      (err) => {
+        if (err) reject(err);
+        else resolve();
+      }
+    );
+  });
 }
 
 const db = connectToDatabase();
 
 // Add graceful shutdown handling
-process.on('SIGINT', () => {
-    db.close((err) => {
-        if (err) {
-            console.error('Error closing database:', err);
-            process.exit(1);
-        }
-        console.log('Database connection closed');
-        process.exit(0);
-    });
+process.on("SIGINT", () => {
+  db.close((err) => {
+    if (err) {
+      console.error("Error closing database:", err);
+      process.exit(1);
+    }
+    console.log("Database connection closed");
+    process.exit(0);
+  });
 });
 
 module.exports = db;

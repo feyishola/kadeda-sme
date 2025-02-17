@@ -1,7 +1,7 @@
 const express = require("express");
 const { Router } = express;
 const opsGrantController = require("../controller/opsgrant.controller");
-const kadunaWards = require("../model/kadunawards");
+const kadunaWards = require("../model/wards.model");
 
 module.exports = () => {
   const api = new Router();
@@ -12,7 +12,7 @@ module.exports = () => {
   });
 
   // Get all Wards for a given LGA
-  api.get("/lgas/:lga/wards", (req, res) => {
+  api.get("/lgas/wards/:lga", (req, res) => {
     let { lga } = req.params;
 
     // Normalize input: Convert to lowercase and trim spaces
@@ -53,7 +53,7 @@ module.exports = () => {
           message,
         });
       } else {
-        res.status(500).json({ error: message });
+        res.status(500).json({ ok: false, message });
       }
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
@@ -64,7 +64,7 @@ module.exports = () => {
     try {
       const result =
         await opsGrantController.getOperationalGrantsDashboardSummary();
-      res.json(result);
+      res.json({ ok: true, result });
     } catch (error) {
       res.status(500).json([
         {
@@ -84,7 +84,7 @@ module.exports = () => {
     try {
       const { currentPage, limit, search, status } = req.query; // Extract query parameters
 
-      const response = await opsGrantController.getGrantsByStatus({
+      const response = await opsGrantController.getGrants({
         currentPage: parseInt(currentPage) || 1,
         limit: parseInt(limit) || 10,
         search: search || "",
@@ -93,7 +93,7 @@ module.exports = () => {
 
       response.ok
         ? res.json(response)
-        : res.status(400).json({ error: response.message });
+        : res.status(400).json({ ok: false, message: response.message });
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
@@ -110,7 +110,7 @@ module.exports = () => {
 
     response.ok
       ? res.json(response)
-      : res.status(404).json({ error: response.message });
+      : res.status(404).json({ ok: false, message: response.message });
   });
 
   // Get businesses for Yellow Pages with filters and pagination
@@ -134,7 +134,7 @@ module.exports = () => {
 
       response.ok
         ? res.json(response)
-        : res.status(400).json({ error: response.message });
+        : res.status(400).json({ ok: false, message: response.message });
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
     }
@@ -145,21 +145,21 @@ module.exports = () => {
     const response = await opsGrantController.getGrantById(req.params.id);
     response.ok
       ? res.json(response)
-      : res.status(404).json({ error: response.message });
+      : res.status(404).json({ ok: false, message: response.message });
   });
 
   //  Route to update status to "Eligible"
-  api.patch("/:id/eligible", async (req, res) => {
+  api.patch("/eligible/:id", async (req, res) => {
     const { id } = req.params;
     const response = await opsGrantController.updateGrantStatus(id, "Eligible");
 
     response.ok
       ? res.json(response)
-      : res.status(400).json({ error: response.message });
+      : res.status(400).json({ ok: false, message: response.message });
   });
 
   // Route to update status to "Disbursed"
-  api.patch("/:id/disbursed", async (req, res) => {
+  api.patch("/disbursed/:id", async (req, res) => {
     const { id } = req.params;
     const response = await opsGrantController.updateGrantStatus(
       id,
@@ -168,17 +168,17 @@ module.exports = () => {
 
     response.ok
       ? res.json(response)
-      : res.status(400).json({ error: response.message });
+      : res.status(400).json({ ok: false, message: response.message });
   });
 
   // Route to update status to "Rejected"
-  api.patch("/:id/rejected", async (req, res) => {
+  api.patch("/rejected/:id", async (req, res) => {
     const { id } = req.params;
     const response = await opsGrantController.updateGrantStatus(id, "Rejected");
 
     response.ok
       ? res.json(response)
-      : res.status(400).json({ error: response.message });
+      : res.status(400).json({ ok: false, message: response.message });
   });
 
   //  Create a new grant
@@ -186,7 +186,7 @@ module.exports = () => {
     const response = await opsGrantController.createGrant(req.body);
     response.ok
       ? res.status(201).json(response)
-      : res.status(400).json({ error: response.message });
+      : res.status(400).json({ ok: false, message: response.message });
   });
 
   //  Update a grant by ID
@@ -197,7 +197,7 @@ module.exports = () => {
     );
     response.ok
       ? res.json(response)
-      : res.status(400).json({ error: response.message });
+      : res.status(400).json({ ok: false, message: response.message });
   });
 
   //  Delete a grant by ID
@@ -205,7 +205,7 @@ module.exports = () => {
     const response = await opsGrantController.deleteGrant(req.params.id);
     response.ok
       ? res.json(response)
-      : res.status(400).json({ error: response.message });
+      : res.status(400).json({ ok: false, message: response.message });
   });
 
   return api;
