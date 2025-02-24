@@ -121,6 +121,10 @@ class opsGrantController {
         civilServantStats,
         idDocTypeStats,
         businessLGACodeStats,
+        businessNumStaffStats,
+        businessRegCatStats,
+        businessYearsInOperationStats,
+        businessWardsCapturedStats,
       ] = await Promise.all([
         // Get businessLGA aggregation
         GrantModel.aggregate([
@@ -200,23 +204,21 @@ class opsGrantController {
 
         // Get idDocType aggregation
         GrantModel.aggregate([
-          { $match: { idDocType: { $exists: true, $ne: null } } },
+          { $match: { "idDocument.idDocType": { $exists: true, $ne: null } } },
           {
             $group: {
-              _id: "$idDocType",
+              _id: "$idDocument.idDocType",
               count: { $sum: 1 },
             },
           },
           {
             $project: {
               _id: 0,
-              idDocument: {
-                idDocType: "$_id",
-              },
+              idDocType: "$_id",
               count: 1,
             },
           },
-          { $sort: { "idDocument.idDocType": 1 } },
+          { $sort: { idDocType: 1 } },
         ]),
 
         // Get businessLGACode aggregation
@@ -235,40 +237,276 @@ class opsGrantController {
               count: 1,
             },
           },
+          { $sort: { businessLGACode: 1 } },
+        ]),
+
+        // Get businessNumStaff aggregation
+        GrantModel.aggregate([
+          { $match: { numStaff: { $exists: true, $ne: null } } },
           {
-            $sort: {
-              businessLGACode: 1,
+            $group: {
+              _id: "$numStaff",
+              count: { $sum: 1 },
             },
           },
+          {
+            $project: {
+              _id: 0,
+              numStaff: "$_id",
+              count: 1,
+            },
+          },
+          { $sort: { numStaff: 1 } },
+        ]),
+
+        // Get businessRegCat aggregation
+        GrantModel.aggregate([
+          {
+            $match: { "businessRegCat.catType": { $exists: true, $ne: null } },
+          },
+          {
+            $group: {
+              _id: "$businessRegCat.catType",
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              businessRegCat: "$_id",
+              count: 1,
+            },
+          },
+          { $sort: { businessRegCat: 1 } },
+        ]),
+
+        // Get businessYearsInOperation aggregation
+        GrantModel.aggregate([
+          { $match: { yearsInOperation: { $exists: true, $ne: null } } },
+          {
+            $group: {
+              _id: "$yearsInOperation",
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              yearsInOperation: "$_id",
+              count: 1,
+            },
+          },
+          { $sort: { yearsInOperation: 1 } },
+        ]),
+
+        // Get businessWardsCaptured aggregation
+        GrantModel.aggregate([
+          { $match: { businessWard: { $exists: true, $ne: null } } },
+          {
+            $group: {
+              _id: "$businessWard",
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              businessWard: "$_id",
+              count: 1,
+            },
+          },
+          { $sort: { businessWard: 1 } },
         ]),
       ]);
 
-      return [
-        {
-          businessLGA: businessLGAStats,
-          businessRegIssuer: businessRegIssuerStats,
-          gender: genderStats,
-          isCivilServant: civilServantStats,
-          idDocType: idDocTypeStats,
-          businessLGACode: businessLGACodeStats,
-          ok: true,
-        },
-      ];
+      return {
+        businessLGA: businessLGAStats,
+        businessRegIssuer: businessRegIssuerStats,
+        gender: genderStats,
+        isCivilServant: civilServantStats,
+        idDocType: idDocTypeStats,
+        businessLGACode: businessLGACodeStats,
+        numStaff: businessNumStaffStats,
+        businessRegCat: businessRegCatStats,
+        yearsInOperation: businessYearsInOperationStats,
+        businessWard: businessWardsCapturedStats,
+        ok: true,
+      };
     } catch (error) {
       console.error("Error generating dashboard summary:", error);
-      return [
-        {
-          businessLGA: [],
-          businessRegIssuer: [],
-          gender: [],
-          isCivilServant: [],
-          idDocType: [],
-          businessLGACode: [],
-          ok: false,
-        },
-      ];
+      return {
+        businessLGA: [],
+        businessRegIssuer: [],
+        gender: [],
+        isCivilServant: [],
+        idDocType: [],
+        businessLGACode: [],
+        numStaff: [],
+        businessRegCat: [],
+        yearsInOperation: [],
+        businessWard: [],
+        ok: false,
+      };
     }
   }
+
+  // async getOperationalGrantsDashboardSummary() {
+  //   try {
+  //     const [
+  //       businessLGAStats,
+  //       businessRegIssuerStats,
+  //       genderStats,
+  //       civilServantStats,
+  //       idDocTypeStats,
+  //       businessLGACodeStats,
+  //     ] = await Promise.all([
+  //       // Get businessLGA aggregation
+  //       GrantModel.aggregate([
+  //         { $match: { businessLGA: { $exists: true, $ne: null } } },
+  //         {
+  //           $group: {
+  //             _id: "$businessLGA",
+  //             count: { $sum: 1 },
+  //           },
+  //         },
+  //         {
+  //           $project: {
+  //             _id: 0,
+  //             businessLGA: "$_id",
+  //             count: 1,
+  //           },
+  //         },
+  //         { $sort: { businessLGA: 1 } },
+  //       ]),
+
+  //       // Get businessRegIssuer aggregation
+  //       GrantModel.aggregate([
+  //         { $match: { businessRegIssuer: { $exists: true, $ne: null } } },
+  //         {
+  //           $group: {
+  //             _id: "$businessRegIssuer",
+  //             count: { $sum: 1 },
+  //           },
+  //         },
+  //         {
+  //           $project: {
+  //             _id: 0,
+  //             businessRegIssuer: "$_id",
+  //             count: 1,
+  //           },
+  //         },
+  //         { $sort: { businessRegIssuer: 1 } },
+  //       ]),
+
+  //       // Get gender aggregation
+  //       GrantModel.aggregate([
+  //         { $match: { gender: { $exists: true, $ne: null } } },
+  //         {
+  //           $group: {
+  //             _id: "$gender",
+  //             count: { $sum: 1 },
+  //           },
+  //         },
+  //         {
+  //           $project: {
+  //             _id: 0,
+  //             gender: "$_id",
+  //             count: 1,
+  //           },
+  //         },
+  //         { $sort: { gender: 1 } },
+  //       ]),
+
+  //       // Get civilServant aggregation
+  //       GrantModel.aggregate([
+  //         { $match: { civilServant: { $exists: true } } },
+  //         {
+  //           $group: {
+  //             _id: "$civilServant",
+  //             count: { $sum: 1 },
+  //           },
+  //         },
+  //         {
+  //           $project: {
+  //             _id: 0,
+  //             isCivilServant: { $eq: ["$_id", true] },
+  //             count: 1,
+  //           },
+  //         },
+  //         { $sort: { isCivilServant: -1 } },
+  //       ]),
+
+  //       // Get idDocType aggregation
+  //       GrantModel.aggregate([
+  //         { $match: { idDocType: { $exists: true, $ne: null } } },
+  //         {
+  //           $group: {
+  //             _id: "$idDocType",
+  //             count: { $sum: 1 },
+  //           },
+  //         },
+  //         {
+  //           $project: {
+  //             _id: 0,
+  //             idDocument: {
+  //               idDocType: "$_id",
+  //             },
+  //             count: 1,
+  //           },
+  //         },
+  //         { $sort: { "idDocument.idDocType": 1 } },
+  //       ]),
+
+  //       // Get businessLGACode aggregation
+  //       GrantModel.aggregate([
+  //         { $match: { businessLGACode: { $exists: true, $ne: null } } },
+  //         {
+  //           $group: {
+  //             _id: "$businessLGACode",
+  //             count: { $sum: 1 },
+  //           },
+  //         },
+  //         {
+  //           $project: {
+  //             _id: 0,
+  //             businessLGACode: "$_id",
+  //             count: 1,
+  //           },
+  //         },
+  //         {
+  //           $sort: {
+  //             businessLGACode: 1,
+  //           },
+  //         },
+  //       ]),
+  //     ]);
+
+  //     return [
+  //       {
+  //         businessLGA: businessLGAStats,
+  //         businessRegIssuer: businessRegIssuerStats,
+  //         gender: genderStats,
+  //         isCivilServant: civilServantStats,
+  //         idDocType: idDocTypeStats,
+  //         businessLGACode: businessLGACodeStats,
+  //         ok: true,
+  //       },
+  //     ];
+  //   } catch (error) {
+  //     console.error("Error generating dashboard summary:", error);
+  //     return [
+  //       {
+  //         businessLGA: [],
+  //         businessRegIssuer: [],
+  //         gender: [],
+  //         isCivilServant: [],
+  //         idDocType: [],
+  //         businessLGACode: [],
+  //         ok: false,
+  //       },
+  //     ];
+  //   }
+  // }
 
   // Create a new grant (MongoDB)
   async createGrant(grantData) {
