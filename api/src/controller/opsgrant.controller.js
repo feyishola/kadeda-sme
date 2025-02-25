@@ -184,18 +184,37 @@ class opsGrantController {
         ]),
 
         // Get civilServant aggregation
+        // GrantModel.aggregate([
+        //   { $match: { civilServant: { $exists: true } } },
+        //   {
+        //     $group: {
+        //       _id: "$civilServant",
+        //       count: { $sum: 1 },
+        //     },
+        //   },
+        //   {
+        //     $project: {
+        //       _id: 0,
+        //       isCivilServant: { $eq: ["$_id", true] },
+        //       count: 1,
+        //     },
+        //   },
+        //   { $sort: { isCivilServant: -1 } },
+        // ]),
+
+        // Get civilServant aggregation
         GrantModel.aggregate([
-          { $match: { civilServant: { $exists: true } } },
+          { $match: { isCivilServant: { $exists: true } } },
           {
             $group: {
-              _id: "$civilServant",
+              _id: "$isCivilServant",
               count: { $sum: 1 },
             },
           },
           {
             $project: {
               _id: 0,
-              isCivilServant: { $eq: ["$_id", true] },
+              isCivilServant: "$_id",
               count: 1,
             },
           },
@@ -241,22 +260,42 @@ class opsGrantController {
         ]),
 
         // Get businessNumStaff aggregation
+        // GrantModel.aggregate([
+        //   { $match: { numStaff: { $exists: true, $ne: null } } },
+        //   {
+        //     $group: {
+        //       _id: "$numStaff",
+        //       count: { $sum: 1 },
+        //     },
+        //   },
+        //   {
+        //     $project: {
+        //       _id: 0,
+        //       numStaff: "$_id",
+        //       count: 1,
+        //     },
+        //   },
+        //   { $sort: { numStaff: 1 } },
+        // ]),
+
         GrantModel.aggregate([
-          { $match: { numStaff: { $exists: true, $ne: null } } },
+          { $match: { numStaff: { $exists: true, $ne: null } } }, // Ensure numStaff exists
           {
-            $group: {
-              _id: "$numStaff",
-              count: { $sum: 1 },
+            $bucket: {
+              groupBy: "$numStaff", // Group by number of staff
+              boundaries: [1, 6, 11, 21, 51, 101], // Define ranges
+              default: "101+", // Anything above 100 falls into this category
+              output: {
+                count: { $sum: 1 }, // Count occurrences per range
+              },
             },
           },
           {
             $project: {
-              _id: 0,
-              numStaff: "$_id",
+              numStaffRange: "$_id",
               count: 1,
             },
           },
-          { $sort: { numStaff: 1 } },
         ]),
 
         // Get businessRegCat aggregation
@@ -280,23 +319,41 @@ class opsGrantController {
           { $sort: { businessRegCat: 1 } },
         ]),
 
-        // Get businessYearsInOperation aggregation
+        // // Get businessYearsInOperation aggregation
+        // GrantModel.aggregate([
+        //   { $match: { yearsInOperation: { $exists: true, $ne: null } } },
+        //   {
+        //     $group: {
+        //       _id: "$yearsInOperation",
+        //       count: { $sum: 1 },
+        //     },
+        //   },
+        //   {
+        //     $project: {
+        //       _id: 0,
+        //       yearsInOperation: "$_id",
+        //       count: 1,
+        //     },
+        //   },
+        //   { $sort: { yearsInOperation: 1 } },
+        // ]),
+
         GrantModel.aggregate([
           { $match: { yearsInOperation: { $exists: true, $ne: null } } },
           {
-            $group: {
-              _id: "$yearsInOperation",
-              count: { $sum: 1 },
+            $bucket: {
+              groupBy: "$yearsInOperation",
+              boundaries: [0, 2, 5, 10, 20, 50], // Define ranges: 0-1, 2-4, 5-9, etc.
+              default: "50+", // Anything above 50 goes here
+              output: { count: { $sum: 1 } },
             },
           },
           {
             $project: {
-              _id: 0,
-              yearsInOperation: "$_id",
+              yearsRange: "$_id", // Rename _id to yearsRange
               count: 1,
             },
           },
-          { $sort: { yearsInOperation: 1 } },
         ]),
 
         // Get businessWardsCaptured aggregation
