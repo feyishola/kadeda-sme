@@ -2,13 +2,33 @@ const express = require("express");
 const { Router } = express;
 const opsGrantController = require("../controller/opsgrant.controller");
 const kadunaWards = require("../model/wards.model");
-
+const banks = require("../banks");
 module.exports = () => {
   const api = new Router();
 
   // Get all LGAs
   api.get("/lgas", (req, res) => {
     res.json({ ok: true, lgas: Object.keys(kadunaWards) });
+  });
+
+  // Get all Banks
+  api.get("/all/banks", (req, res) => {
+    try {
+      // If no banks found, return a message
+      if (!banks || banks.length === 0) {
+        return res.status(404).json({ ok: false, message: "No banks found" });
+      }
+
+      // Return the list of banks with a success status
+      res.status(200).json({ ok: true, data: banks });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        ok: false,
+        message: "Internal Server Error",
+        error: error.message,
+      });
+    }
   });
 
   // Get all Wards for a given LGA

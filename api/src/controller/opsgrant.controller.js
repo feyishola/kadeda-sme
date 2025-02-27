@@ -699,6 +699,29 @@ class opsGrantController {
   // }
 
   // Get all grants' longitude & latitude for a given LGA and Ward
+  // async getCoordinatesByWard(businessLGA, businessWard) {
+  //   try {
+  //     // Ensure both LGA & Ward are provided
+  //     if (!businessLGA || !businessWard) {
+  //       return { ok: false, message: "LGA and Ward are required." };
+  //     }
+
+  //     // Find grants in the selected LGA & Ward
+  //     const grants = await GrantModel.find(
+  //       { businessLGA, businessWard }
+  //       // { latitude: 1, longitude: 1, businessName: 1, _id: 0 }
+  //     );
+
+  //     if (!grants.length) {
+  //       return { ok: false, message: "No grants found in this ward." };
+  //     }
+
+  //     return { ok: true, grants };
+  //   } catch (error) {
+  //     return { ok: false, message: error.message };
+  //   }
+  // }
+
   async getCoordinatesByWard(businessLGA, businessWard) {
     try {
       // Ensure both LGA & Ward are provided
@@ -706,11 +729,11 @@ class opsGrantController {
         return { ok: false, message: "LGA and Ward are required." };
       }
 
-      // Find grants in the selected LGA & Ward
-      const grants = await GrantModel.find(
-        { businessLGA, businessWard }
-        // { latitude: 1, longitude: 1, businessName: 1, _id: 0 }
-      );
+      // Case-insensitive search using regex
+      const grants = await GrantModel.find({
+        businessLGA: { $regex: new RegExp(`^${businessLGA}$`, "i") },
+        businessWard: { $regex: new RegExp(`^${businessWard}$`, "i") },
+      });
 
       if (!grants.length) {
         return { ok: false, message: "No grants found in this ward." };
